@@ -10,85 +10,82 @@ var Vector = function(x, y, z) {
 
 var GRAVITY = -40;
 var TESSELATION = 20;
-var NUM_SUB_FIREWORKS = 5;
-var EXPLOSIVITY = 0.1;
+var NUM_SUB_FIREWORKS = 15;
+var EXPLOSIVITY = 20;
 
 // Firework orb explodes when lifetime reaches zero
 function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode) {
 	// Store instance variables
-	this.pos = initPos;
-	this.vel = initVel;
-	this.color = initColor;
-	this.lifetime = initLifetime;
-	this.mesh = GL.Mesh.sphere({"detail": TESSELATION});
-	this.shader = new GL.Shader('\
+	var pos = initPos;
+	var vel = initVel;
+	var color = initColor;
+	var lifetime = initLifetime;
+	var mesh = GL.Mesh.sphere({"detail": TESSELATION});
+	var shader = new GL.Shader('\
 	  void main() {\
 		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
 	  }\
 	', '\
 	  void main() {\
-		gl_FragColor = vec4(' + this.color.x + ', ' + this.color.y + ', ' + this.color.z + ', 1.0);\
+		gl_FragColor = vec4(' + color.x + ', ' + color.y + ', ' + color.z + ', 1.0);\
 	  }\
 	');
-	this.shouldExplode = shouldExplode;
-	this.subFireworks = []
+	var subFireworks = [];
 	
 	// Define public methods
 	this.update = function() {
 	
-		if (this.lifetime > 0) {
+		if (lifetime > 0) {
 			// Update velocity based on acceleration
-			this.vel.y += GRAVITY/FPS;
+			vel.y += GRAVITY/FPS;
 			
 			// Update position based on velocity
-			this.pos.x += this.vel.x/FPS;
-			this.pos.y += this.vel.y/FPS;
-			this.pos.z += this.vel.z/FPS;
+			pos.x += vel.x/FPS;
+			pos.y += vel.y/FPS;
+			pos.z += vel.z/FPS;
 			
 			// Check for explosion
-			if (this.shouldExplode) {
-				this.lifetime -= 1/FPS;
-				if (this.lifetime <= 0) {
+			if (shouldExplode) {
+				lifetime -= 1/FPS;
+				if (lifetime <= 0) {
 					this.explode();
 				}
 			}
 		} else {
 			// Update each sub-firework
-			for (var i = 0; i < this.subFireworks.length; i++) {
-				this.subFireworks[i].update();
+			for (var i = 0; i < subFireworks.length; i++) {
+				subFireworks[i].update();
 			}
 		}
 	};
 	
 	this.draw = function(gl) {
-		if (this.lifetime > 0) {
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		if (lifetime > 0) {
 			gl.loadIdentity();
-			gl.translate(this.pos.x, this.pos.y, this.pos.z);
-			this.shader.draw(this.mesh);
+			gl.translate(pos.x, pos.y, pos.z);
+			shader.draw(mesh);
 		} else {
 			// Draw each sub-firework
-			for (var i = 0; i < this.subFireworks.length; i++) {
-				this.subFireworks[i].draw(gl);
+			for (var i = 0; i < subFireworks.length; i++) {
+				subFireworks[i].draw(gl);
 			}
 		}
 	};
 	
 	this.explode = function () {
-		console.log("EXPLODED!");
 		for (var i = 0; i < NUM_SUB_FIREWORKS; i++) {
 		
 			var phi = Math.random()*Math.PI*2;
 			var theta = Math.random()*Math.PI;
 		
 		
-			var vel = new Vector(this.vel.x + EXPLOSIVITY*Math.cos(phi)*Math.sin(theta), this.vel.y + EXPLOSIVITY*Math.sin(phi)*Math.sin(theta), this.vel.z + EXPLOSIVITY*Math.cos(theta));
-			console.log(vel);
+			var newVel = new Vector(vel.x + EXPLOSIVITY*Math.cos(phi)*Math.sin(theta), vel.y + EXPLOSIVITY*Math.sin(phi)*Math.sin(theta), vel.z + EXPLOSIVITY*Math.cos(theta));
 			var color = new Vector(1.0, 0, 0);
 			
 			var lifetime = 3.0; // explode after three seconds
-			this.subFireworks.push(new FireworkOrb(this.pos, vel, color, lifetime, false));
+			subFireworks.push(new FireworkOrb(new Vector(pos.x, pos.y, pos.z), newVel, color, lifetime, false));
 		}
+
 	};
 	
 	
@@ -100,9 +97,9 @@ function init() {
 	var fireworkOrbs = [];
 		
 	var pos = new Vector(0, -60, -300);
-	var vel = new Vector(0, 120, 0);
+	var vel = new Vector(0, 100, 0);
 	var color = new Vector(1.0, 0, 0);
-	var lifetime = 3.0; // explode after three seconds
+	var lifetime = 1.5; // explode after three seconds
 	
 	fireworkOrbs.push(new FireworkOrb(pos, vel, color, lifetime, true));
 	
@@ -119,7 +116,7 @@ function init() {
 	};
 
 	gl.ondraw = function() {
-	
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		// Update display 
 		var fpsOut = document.getElementById('fps');
 		setInterval(function(){
