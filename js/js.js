@@ -33,19 +33,6 @@ fireworkPropertiesDict.colors = {};
 var positionsBuffer = [];
 var colorsBuffer = [];
 
-function updateBuffers() {
-	positionsBuffer = [];
-	colorsBuffer = [];
-	
-	for (var key in fireworkPropertiesDict.positions) {
-		positionsBuffer.push(fireworkPropertiesDict.positions[key]);	
-	}
-	
-	for (var key in fireworkPropertiesDict.colors) {
-		colorsBuffer.push(fireworkPropertiesDict.colors[key]);	
-	}
-}
-
 // A monotonically increasing number for the lifetime of the program
 var fireworkCounter = 0;
 
@@ -63,9 +50,6 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 	var pos = initPos;
 	var vel = initVel;
 	var color = initColor;
-	// Store color in fireworkPropertiesDict
-	fireworkPropertiesDict.colors[id] = color.getArray();
-	fireworkPropertiesDict.positions[id] = pos.getArray();
 	var lifetime = initLifetime;
 	var subFireworks = [];
 	var hasExploded = false;
@@ -96,8 +80,9 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		pos.y += vel.y*seconds;
 		pos.z += vel.z*seconds;
 		
-		if (!hasExploded) {
-			fireworkPropertiesDict.positions[id] = pos.getArray();
+		if (!hasExploded && lifetime >= MIN_AGE) {
+			positionsBuffer.push(pos.getArray());
+			colorsBuffer.push(color.getArray());
 		}
 		
 		if (lifetime >= 0) {
@@ -174,9 +159,6 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		}
 		
 		
-		delete fireworkPropertiesDict.positions[id];
-		delete fireworkPropertiesDict.colors[id];
-		
 		//shouldExplode = false;
 		hasExploded = true;
 
@@ -202,6 +184,10 @@ function init() {
 	var angleY = 0;
 
 	gl.onupdate = function(seconds) {
+		// Clear buffers to be recomputed
+		positionsBuffer = [];
+		colorsBuffer = [];
+		
 		var speed = seconds*400;
 		
 		var newFireworks = [];
@@ -225,7 +211,6 @@ function init() {
 		var sideways = GL.Vector.fromAngles(-angleY * Math.PI / 180, 0);
 		camera = camera.add(sideways.multiply(speed * (right - left)));
 		
-		updateBuffers();
 	};
 
 	gl.ondraw = function() {
@@ -272,7 +257,6 @@ function init() {
 		var tracer = new GL.Raytracer();
 		var ray = tracer.getRayForPixel(e.x, e.y);
 		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
-		console.log(result);
 		fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, result.hit.z), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 0, true, 1));
 	};
 	
