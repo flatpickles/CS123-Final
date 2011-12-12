@@ -10,7 +10,7 @@ var Vector = function(x, y, z) {
 
 var GRAVITY = -25;
 var TESSELATION = 2;
-var NUM_SUB_FIREWORKS = 100;
+var NUM_SUB_FIREWORKS = 50;
 var EXPLOSIVITY = 45.0;
 var MIN_AGE = -3; 
 var AIR_RESISTANCE = 0.020;
@@ -38,11 +38,11 @@ function updateBuffers() {
 	colorsBuffer = [];
 	
 	for (var key in fireworkPropertiesDict.positions) {
-		positionsBuffer.push(fireworkPropertiesDict.positions[key].getArray());	
+		positionsBuffer.push(fireworkPropertiesDict.positions[key]);	
 	}
 	
 	for (var key in fireworkPropertiesDict.colors) {
-		colorsBuffer.push(fireworkPropertiesDict.colors[key].getArray());	
+		colorsBuffer.push(fireworkPropertiesDict.colors[key]);	
 	}
 }
 
@@ -64,8 +64,8 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 	var vel = initVel;
 	var color = initColor;
 	// Store color in fireworkPropertiesDict
-	fireworkPropertiesDict.colors[id] = color;
-	fireworkPropertiesDict.positions[id] = pos;
+	fireworkPropertiesDict.colors[id] = color.getArray();
+	fireworkPropertiesDict.positions[id] = pos.getArray();
 	var lifetime = initLifetime;
 	var subFireworks = [];
 	var hasExploded = false;
@@ -97,7 +97,7 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		pos.z += vel.z*seconds;
 		
 		if (!hasExploded) {
-			fireworkPropertiesDict.positions[id] = pos;
+			fireworkPropertiesDict.positions[id] = pos.getArray();
 		}
 		
 		if (lifetime >= 0) {
@@ -196,7 +196,7 @@ function init() {
 	
 	console.log(RECUR_DEPTH);
 	
-	fireworks.push(new Firework(pos, vel, color, lifetime, false, RECUR_DEPTH));
+	fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH));
 	
 	var angleX = -0;
 	var angleY = 0;
