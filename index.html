@@ -40,17 +40,18 @@ void main() {
 	
 	
 <script id="listVert" type="text/shader/x-vertex">
+varying vec4 color;
 void main() {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 	gl_PointSize = 1.5;
+	color = gl_Color;
 }
 </script>
 
 <script id="listFrag" type="text/shader/x-fragment">
-uniform vec3 color;
-
+varying vec4 color;
 void main() {
-	gl_FragColor = vec4(1, 1, 1, 1.0);
+	gl_FragColor = color;
 }
 </script>
 	

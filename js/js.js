@@ -10,7 +10,7 @@ var Vector = function(x, y, z) {
 
 var GRAVITY = -25;
 var TESSELATION = 2;
-var NUM_SUB_FIREWORKS = 50;
+var NUM_SUB_FIREWORKS = 100;
 var EXPLOSIVITY = 45.0;
 var MIN_AGE = -3; 
 var AIR_RESISTANCE = 0.020;
@@ -34,7 +34,6 @@ var positionsBuffer = [];
 var colorsBuffer = [];
 
 function updateBuffers() {
-	console.log("CALLED");
 	positionsBuffer = [];
 	colorsBuffer = [];
 	
@@ -53,18 +52,20 @@ var fireworkCounter = 0;
 // A list of all the points to be drawn. For points A, B: [ax, ay, az, bx, by, bz]
 //var pointDict = {"vertices": [[2,3,4], [1,2,3]]};
 var pointsMesh = new GL.Mesh();
+pointsMesh.addVertexBuffer('colors', 'gl_Color');
 var meshShader = new GL.Shader('listVert', 'listFrag');
 
 // Firework orb explodes when lifetime reaches zero
 function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth) {
 	// Calculate an ID used to index into fireworkPropertiesDict
-	var id = fireworkCounter++;
+	var id = "index" + fireworkCounter++;
 	// Store instance variables
 	var pos = initPos;
 	var vel = initVel;
 	var color = initColor;
 	// Store color in fireworkPropertiesDict
 	fireworkPropertiesDict.colors[id] = color;
+	fireworkPropertiesDict.positions[id] = pos;
 	var lifetime = initLifetime;
 	var subFireworks = [];
 	var hasExploded = false;
@@ -95,9 +96,11 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		pos.y += vel.y*seconds;
 		pos.z += vel.z*seconds;
 		
-		fireworkPropertiesDict.positions[id] = pos;
-			
-		if (lifetime > 0) {
+		if (!hasExploded) {
+			fireworkPropertiesDict.positions[id] = pos;
+		}
+		
+		if (lifetime >= 0) {
 
 			lifetime -= seconds; // some decimal
 					
@@ -112,7 +115,7 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		} else {
 			lifetime -= seconds; // some decimal
 			
-			if (lifetime < MIN_AGE && fireworkPropertiesDict.positions[id]) {
+			if (lifetime < MIN_AGE && !!fireworkPropertiesDict.positions[id]) {
 				delete fireworkPropertiesDict.positions[id];
 				delete fireworkPropertiesDict.colors[id];
 			}
@@ -173,7 +176,7 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		
 		delete fireworkPropertiesDict.positions[id];
 		delete fireworkPropertiesDict.colors[id];
-
+		
 		//shouldExplode = false;
 		hasExploded = true;
 
@@ -193,7 +196,7 @@ function init() {
 	
 	console.log(RECUR_DEPTH);
 	
-	fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH));
+	fireworks.push(new Firework(pos, vel, color, lifetime, false, RECUR_DEPTH));
 	
 	var angleX = -0;
 	var angleY = 0;
@@ -222,7 +225,7 @@ function init() {
 		var sideways = GL.Vector.fromAngles(-angleY * Math.PI / 180, 0);
 		camera = camera.add(sideways.multiply(speed * (right - left)));
 		
-		
+		updateBuffers();
 	};
 
 	gl.ondraw = function() {
@@ -250,13 +253,27 @@ function init() {
 		gl.loadIdentity();
 		doCameraTransformation(gl);
 	//	gl.drawArrays(gl.POINTS, 0, points.length/3);
-		//meshShader.draw(pointsMesh);
-		updateBuffers();
-		pointsMesh = GL.Mesh.load({"vertices": positionsBuffer});
+		//meshShader.draw(pointsMesh); 
+		
+		if (positionsBuffer.length != colorsBuffer.length)
+			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
+			
+		pointsMesh.vertices = positionsBuffer;
+		pointsMesh.colors = colorsBuffer;
+		pointsMesh.compile();
 		//console.log(pointsMesh);
 		//pointsMesh.compile();
 		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
 
+	};
+	
+	gl.onmousedown = function(e) {
+		//console.log(e);
+		var tracer = new GL.Raytracer();
+		var ray = tracer.getRayForPixel(e.x, e.y);
+		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
+		console.log(result);
+		fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, result.hit.z), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 0, true, 1));
 	};
 	
 	
