@@ -1,18 +1,59 @@
 <html>
 <head>
-<style>
-#fps {
-	z-index: 1;
-	color: white;
-	position: absolute;
-	font-size: 40px;
-}
-</style>
 </head>
 
 <body>
 
 <script type="text/javascript" src="js/lightgl.js"></script>
+
+<script id="sphereVert" type="text/shader/x-vertex">
+void main() {
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}
+</script>
+
+<script id="sphereFrag" type="text/shader/x-fragment">
+uniform vec3 color;
+
+void main() {
+	gl_FragColor = vec4(color.xyz, 1.0);
+}
+</script>
+
+<script id="planeVert" type="text/shader/x-vertex">
+varying vec2 coord;
+void main() {
+	coord = gl_TexCoord.xy;
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}
+</script>
+
+<script id="planeFrag" type="text/shader/x-fragment">
+uniform sampler2D texture;
+uniform sampler2D overlay;
+varying vec2 coord;
+
+void main() {
+	gl_FragColor = vec4(0, 0.6, 0.1, 1.0);
+}
+</script>
+	
+	
+<script id="listVert" type="text/shader/x-vertex">
+void main() {
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_PointSize = 1.5;
+}
+</script>
+
+<script id="listFrag" type="text/shader/x-fragment">
+uniform vec3 color;
+
+void main() {
+	gl_FragColor = vec4(1, 1, 1, 1.0);
+}
+</script>
+	
 <script type="text/javascript" src="js/js.js"></script>
 
 

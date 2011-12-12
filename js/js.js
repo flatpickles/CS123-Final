@@ -2,12 +2,16 @@ var Vector = function(x, y, z) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
+	
+	this.getArray = function () {
+		return [this.x, this.y, this.z];
+	};
 }
 
 var GRAVITY = -25;
 var TESSELATION = 2;
-var NUM_SUB_FIREWORKS = 20;
-var EXPLOSIVITY = 35.0;
+var NUM_SUB_FIREWORKS = 50;
+var EXPLOSIVITY = 45.0;
 var MIN_AGE = -3; 
 var AIR_RESISTANCE = 0.020;
 var INITIAL_SPEED = 600;
@@ -15,42 +19,52 @@ var RECUR_DEPTH = 2;
 
 var gl = GL.create();
 var sphereMesh = GL.Mesh.sphere({"detail": TESSELATION});
-var sphereShader = new GL.Shader('\
-	void main() {\
-		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-	}\
-', '\
-	uniform vec3 color;\
-	void main() {\
-		gl_FragColor = vec4(color.xyz, 1.0);\
-	}\
-');
+var sphereShader = new GL.Shader('sphereVert', 'sphereFrag');
 
 var planeMesh = GL.Mesh.plane({ coords: true });
-var planeShader = new GL.Shader('\
-  varying vec2 coord;\
-  void main() {\
-    coord = gl_TexCoord.xy;\
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-  }\
-', '\
-  uniform sampler2D texture;\
-  uniform sampler2D overlay;\
-  varying vec2 coord;\
-  void main() {\
-    gl_FragColor = vec4(0, 0.6, 0.1, 1.0);\
-  }\
-');
-
+var planeShader = new GL.Shader('planeVert', 'planeFrag');
 
 var camera = new GL.Vector(0, 150, 500);
 
+// Global dicts and arrays
+var fireworkPropertiesDict = {};
+fireworkPropertiesDict.positions = {};
+fireworkPropertiesDict.colors = {};
+var positionsBuffer = [];
+var colorsBuffer = [];
+
+function updateBuffers() {
+	console.log("CALLED");
+	positionsBuffer = [];
+	colorsBuffer = [];
+	
+	for (var key in fireworkPropertiesDict.positions) {
+		positionsBuffer.push(fireworkPropertiesDict.positions[key].getArray());	
+	}
+	
+	for (var key in fireworkPropertiesDict.colors) {
+		colorsBuffer.push(fireworkPropertiesDict.colors[key].getArray());	
+	}
+}
+
+// A monotonically increasing number for the lifetime of the program
+var fireworkCounter = 0;
+
+// A list of all the points to be drawn. For points A, B: [ax, ay, az, bx, by, bz]
+//var pointDict = {"vertices": [[2,3,4], [1,2,3]]};
+var pointsMesh = new GL.Mesh();
+var meshShader = new GL.Shader('listVert', 'listFrag');
+
 // Firework orb explodes when lifetime reaches zero
-function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth) {
+function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth) {
+	// Calculate an ID used to index into fireworkPropertiesDict
+	var id = fireworkCounter++;
 	// Store instance variables
 	var pos = initPos;
 	var vel = initVel;
 	var color = initColor;
+	// Store color in fireworkPropertiesDict
+	fireworkPropertiesDict.colors[id] = color;
 	var lifetime = initLifetime;
 	var subFireworks = [];
 	var hasExploded = false;
@@ -80,6 +94,8 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 		pos.x += vel.x*seconds;
 		pos.y += vel.y*seconds;
 		pos.z += vel.z*seconds;
+		
+		fireworkPropertiesDict.positions[id] = pos;
 			
 		if (lifetime > 0) {
 
@@ -95,6 +111,11 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 			return false;
 		} else {
 			lifetime -= seconds; // some decimal
+			
+			if (lifetime < MIN_AGE && fireworkPropertiesDict.positions[id]) {
+				delete fireworkPropertiesDict.positions[id];
+				delete fireworkPropertiesDict.colors[id];
+			}
 			
 			var finished = true;
 			var newList = [];
@@ -112,6 +133,7 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 		}
 	};
 	
+	/*
 	this.draw = function(gl) {
 		// Draw itself
 		if (!hasExploded) {
@@ -130,6 +152,7 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 			}
 		}
 	};
+	*/
 	
 	this.explode = function () {
 		var newColor = new Vector(Math.random(), Math.random(), Math.random());
@@ -144,8 +167,12 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 			
 			var newLifetime = 1.5 + -0.5 + Math.random()*1; // explode after three seconds
 			
-			subFireworks.push(new FireworkOrb(new Vector(pos.x, pos.y, pos.z), newVel, newColor, newLifetime, true, recurDepth - 1));
+			subFireworks.push(new Firework(new Vector(pos.x, pos.y, pos.z), newVel, newColor, newLifetime, true, recurDepth - 1));
 		}
+		
+		
+		delete fireworkPropertiesDict.positions[id];
+		delete fireworkPropertiesDict.colors[id];
 
 		//shouldExplode = false;
 		hasExploded = true;
@@ -157,7 +184,7 @@ function FireworkOrb(initPos, initVel, initColor, initLifetime, shouldExplode, r
 
 function init() {
 	
-	var fireworkOrbs = [];
+	var fireworks = [];
 		
 	var pos = new Vector(0, 0, 0);
 	var vel = new Vector(0, INITIAL_SPEED, 0);
@@ -166,7 +193,7 @@ function init() {
 	
 	console.log(RECUR_DEPTH);
 	
-	fireworkOrbs.push(new FireworkOrb(pos, vel, color, lifetime, true, RECUR_DEPTH));
+	fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH));
 	
 	var angleX = -0;
 	var angleY = 0;
@@ -175,13 +202,13 @@ function init() {
 		var speed = seconds*400;
 		
 		var newFireworks = [];
-		for (var i = 0; i < fireworkOrbs.length; i++) {
+		for (var i = 0; i < fireworks.length; i++) {
 			// Update the firework and keep it if it's not done
-			if (!fireworkOrbs[i].update(seconds)) {
-				newFireworks.push(fireworkOrbs[i]);
+			if (!fireworks[i].update(seconds)) {
+				newFireworks.push(fireworks[i]);
 			}
 		}
-		fireworkOrbs = newFireworks;
+		fireworks = newFireworks;
 		
 		// Forward movement
 		var up = GL.keys.W | GL.keys.UP;
@@ -194,21 +221,24 @@ function init() {
 		var right = GL.keys.D | GL.keys.RIGHT;
 		var sideways = GL.Vector.fromAngles(-angleY * Math.PI / 180, 0);
 		camera = camera.add(sideways.multiply(speed * (right - left)));
+		
+		
 	};
 
 	gl.ondraw = function() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.enable(gl.DEPTH_TEST);
 		
-		gl.color(0, 1, 0, 1);
-
-		for (var i = 0; i < fireworkOrbs.length; i++) {
-			fireworkOrbs[i].draw(gl);
+		//gl.color(0, 1, 0, 1);
+		
+		/*
+		for (var i = 0; i < fireworks.length; i++) {
+			fireworks[i].draw(gl);
 		}
-	
+		
 		gl.loadIdentity();
 		
-		
+		*/
 		
 		
 		doCameraTransformation(gl);
@@ -216,11 +246,24 @@ function init() {
 		gl.rotate(90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
 		
 		planeShader.draw(planeMesh);
+		
+		gl.loadIdentity();
+		doCameraTransformation(gl);
+	//	gl.drawArrays(gl.POINTS, 0, points.length/3);
+		//meshShader.draw(pointsMesh);
+		updateBuffers();
+		pointsMesh = GL.Mesh.load({"vertices": positionsBuffer});
+		//console.log(pointsMesh);
+		//pointsMesh.compile();
+		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
 
 	};
 	
+	
+	
 	gl.fullscreen();
 	gl.animate();
+	//console.log(pointsMesh);
 
 };
 
