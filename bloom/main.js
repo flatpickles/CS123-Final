@@ -19,12 +19,12 @@ window.onload = function() {
 
     var dragonMesh = GL.Mesh.load(dragon);
     var urls = [];
-    urls.push("astra/posx.jpg");
-    urls.push("astra/negx.jpg");
-    urls.push("astra/posy.jpg");
-    urls.push("astra/negy.jpg");
-    urls.push("astra/posz.jpg");
-    urls.push("astra/negz.jpg");
+    urls.push("night/posx.jpg");
+    urls.push("night/negx.jpg");
+    urls.push("night/posy.jpg");
+    urls.push("night/negy.jpg");
+    urls.push("night/posz.jpg");
+    urls.push("night/negz.jpg");
     var cubeMap = GL.CubeMap.fromURLs(urls);
     var skybox = GL.Mesh.cube({ coords: true });
     skybox.transform(GL.Matrix.scale(100, 100, 100));

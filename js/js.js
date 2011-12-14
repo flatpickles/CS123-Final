@@ -25,6 +25,8 @@ var planeMesh = GL.Mesh.plane({ coords: true });
 var planeShader = new GL.Shader('planeVert', 'planeFrag');
 
 var camera = new GL.Vector(0, 150, 500);
+var angleX = 5;
+var angleY = 0;
 
 // Global dicts and arrays
 var fireworkPropertiesDict = {};
@@ -33,8 +35,36 @@ fireworkPropertiesDict.colors = {};
 var positionsBuffer = [];
 var colorsBuffer = [];
 
-// A monotonically increasing number for the lifetime of the program
-var fireworkCounter = 0;
+// Setup sky 
+
+var urls = [];
+urls.push("night/posx.jpg");
+urls.push("night/negx.jpg");
+urls.push("night/posy.jpg");
+urls.push("night/negy.jpg");
+urls.push("night/posz.jpg");
+urls.push("night/negz.jpg");
+var cubeMap = GL.CubeMap.fromURLs(urls);
+var skybox = GL.Mesh.cube({ coords: true });
+skybox.transform(GL.Matrix.scale(40000, 40000, 40000));
+skybox.transform(GL.Matrix.translate(0, 0, 0));
+
+
+var skyboxShader = new GL.Shader('\
+  varying vec3 pos;\
+  void main() {\
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
+	pos = gl_Vertex.xyz;\
+  }\
+', '\
+  uniform samplerCube cubeMap;\
+  varying vec3 pos;\
+  void main() {\
+	gl_FragColor = textureCube(cubeMap, normalize(pos));\
+  }\
+');
+
+
 
 // A list of all the points to be drawn. For points A, B: [ax, ay, az, bx, by, bz]
 //var pointDict = {"vertices": [[2,3,4], [1,2,3]]};
@@ -44,8 +74,6 @@ var meshShader = new GL.Shader('listVert', 'listFrag');
 
 // Firework orb explodes when lifetime reaches zero
 function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth) {
-	// Calculate an ID used to index into fireworkPropertiesDict
-	var id = "index" + fireworkCounter++;
 	// Store instance variables
 	var pos = initPos;
 	var vel = initVel;
@@ -99,12 +127,7 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 			return false;
 		} else {
 			lifetime -= seconds; // some decimal
-			
-			if (lifetime < MIN_AGE && !!fireworkPropertiesDict.positions[id]) {
-				delete fireworkPropertiesDict.positions[id];
-				delete fireworkPropertiesDict.colors[id];
-			}
-			
+					
 			var finished = true;
 			var newList = [];
 			// Update each sub-firework
@@ -179,9 +202,6 @@ function init() {
 	console.log(RECUR_DEPTH);
 	
 	fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH));
-	
-	var angleX = -0;
-	var angleY = 0;
 
 	gl.onupdate = function(seconds) {
 		// Clear buffers to be recomputed
@@ -217,25 +237,17 @@ function init() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		gl.enable(gl.DEPTH_TEST);
 		
-		//gl.color(0, 1, 0, 1);
-		
-		/*
-		for (var i = 0; i < fireworks.length; i++) {
-			fireworks[i].draw(gl);
-		}
-		
-		gl.loadIdentity();
-		
-		*/
-		
+
 		
 		doCameraTransformation(gl);
-		gl.scale(1000, 1, 1000);
+		//gl.loadIdentity();
 		gl.rotate(90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
+		gl.scale(200, 200, 200);
+		
 		
 		planeShader.draw(planeMesh);
 		
-		gl.loadIdentity();
+
 		doCameraTransformation(gl);
 	//	gl.drawArrays(gl.POINTS, 0, points.length/3);
 		//meshShader.draw(pointsMesh); 
@@ -249,26 +261,39 @@ function init() {
 		//console.log(pointsMesh);
 		//pointsMesh.compile();
 		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
+		
+
+		cubeMap.bind();
+        skyboxShader.draw(skybox);
 
 	};
 	
 	gl.onmousedown = function(e) {
-		//console.log(e);
 		var tracer = new GL.Raytracer();
 		var ray = tracer.getRayForPixel(e.x, e.y);
 		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
 		fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, result.hit.z), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 0, true, 1));
 	};
 	
+	gl.onmousemove = function(e) {
+		if (e.dragging) {
+			angleY -= e.deltaX * 0.25;
+			angleX = Math.max(-90, Math.min(90, angleX - e.deltaY * 0.25));
+		}
+	};
 	
 	
-	gl.fullscreen();
+	
+	gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
 	gl.animate();
 	//console.log(pointsMesh);
 
 };
 
 function doCameraTransformation(gl) {
+	gl.loadIdentity();
+	gl.rotate(-angleX, 1, 0, 0);
+	gl.rotate(-angleY, 0, 1, 0);
 	gl.translate(-camera.x, -camera.y, -camera.z);
 };
 
