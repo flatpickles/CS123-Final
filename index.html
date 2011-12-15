@@ -1,5 +1,6 @@
 <html>
 <head>
+<title>WebGL Fireworks</title>
 <style>
 html, body {
 //	cursor: none;
@@ -11,17 +12,15 @@ html, body {
 
 <script type="text/javascript" src="js/lightgl.js"></script>
 
-<script id="sphereVert" type="text/shader/x-vertex">
+<script id="lineVert" type="text/shader/x-vertex">
 void main() {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }
 </script>
 
-<script id="sphereFrag" type="text/shader/x-fragment">
-uniform vec3 color;
-
+<script id="lineFrag" type="text/shader/x-fragment">
 void main() {
-	gl_FragColor = vec4(color.xyz, 1.0);
+	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }
 </script>
 
@@ -35,32 +34,66 @@ void main() {
 
 <script id="planeFrag" type="text/shader/x-fragment">
 uniform sampler2D texture;
-uniform sampler2D overlay;
+uniform float tiling;
 varying vec2 coord;
-
 void main() {
-	gl_FragColor = vec4(0, 0.6, 0.1, 1.0);
+	vec2 newCoord;
+	newCoord.x = mod(coord.x*tiling, 1.0);
+	if (coord.x == 1.0) newCoord.x = 1.0;
+	newCoord.y = mod(coord.y*tiling, 1.0);
+	if (coord.y == 1.0) newCoord.y = 1.0;
+	gl_FragColor = vec4(texture2D(texture, newCoord).xyz, 0.75);
 }
 </script>
 	
-	
-<script id="listVert" type="text/shader/x-vertex">
+<script id="pointVert" type="text/shader/x-vertex">
 varying vec4 color;
 void main() {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-	gl_PointSize = 2.0;
+	gl_PointSize = 1.5;
 	color = gl_Color;
+	color = vec4(color.xyz, 1.0);
 }
 </script>
 
-<script id="listFrag" type="text/shader/x-fragment">
+<script id="pointFrag" type="text/shader/x-fragment">
 varying vec4 color;
 void main() {
 	gl_FragColor = color;
 }
 </script>
-	
+
+<script id="terrainVert" type="text/shader/x-vertex">
+varying vec3 color;
+varying vec3 normal;
+varying vec3 light;
+
+void main() {
+	const vec3 lightDir = vec3(1.0, 2.0, 3.0) / 3.741657386773941;
+	light = (gl_ModelViewMatrix * vec4(lightDir, 0.0)).xyz;
+	color = vec3(0.0, 0.8, 0.0);
+	normal = gl_NormalMatrix * gl_Normal;
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}
+</script>
+
+<script id="terrainFrag" type="text/shader/x-fragment">
+varying vec3 color;
+varying vec3 normal;
+varying vec3 light;
+
+void main() {
+	vec3 n = normalize(normal);
+	float diffuse = max(0.0, dot(light, n));
+	float specular = 0.0; //pow(max(0.0, -reflect(light, n).z), 32.0) * sqrt(diffuse);
+	gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), 1.0);
+}
+</script>
+
+
+<script type="text/javascript" src="js/terrain.js"></script>	
 <script type="text/javascript" src="js/js.js"></script>
+
 
 
 </body>

@@ -85,8 +85,8 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 		}
 	}
 	
-	this.draw = function(gl) {
-		terrainShader.draw(this.mesh);
+	this.drawWithShader = function(shader) {
+		shader.draw(this.mesh);
 		//terrainShader.drawBuffers(this.mesh.vertexBuffers, null, gl.LINE);
 	}
 	
