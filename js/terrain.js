@@ -79,7 +79,7 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 				var centerOffsetX = Math.max(Math.abs(col - this.gridLen / 2) - 3, 0);
 				var centerOffsetY = Math.max(Math.abs(row - this.gridLen / 2) - 3, 0);
 				var centerCoeff = .8 - Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY) / (this.gridLen / 2);
-				centerCoeff = centerCoeff * centerCoeff * centerCoeff * 2;
+				centerCoeff = centerCoeff * centerCoeff * centerCoeff * centerCoeff * 2;
 				this.allPoints[this.getIndex(new GridPoint(col, row))].y -= centerCoeff * this.dip;
 			}	
 		}
