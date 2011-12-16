@@ -50,7 +50,7 @@ void main() {
 varying vec4 color;
 void main() {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-	gl_PointSize = 1.5;
+	gl_PointSize = 2.0;
 	color = gl_Color;
 	color = vec4(color.xyz, 1.0);
 }
@@ -67,6 +67,8 @@ void main() {
 varying vec3 color;
 varying vec3 normal;
 varying vec3 light;
+varying float y;
+uniform float flipped;
 
 void main() {
 	const vec3 lightDir = vec3(1.0, 2.0, 3.0) / 3.741657386773941;
@@ -74,6 +76,7 @@ void main() {
 	color = vec3(0.0, 0.8, 0.0);
 	normal = gl_NormalMatrix * gl_Normal;
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	y = gl_Vertex.y;
 }
 </script>
 
@@ -81,12 +84,18 @@ void main() {
 varying vec3 color;
 varying vec3 normal;
 varying vec3 light;
+varying float y;
+uniform float flipped;
 
 void main() {
 	vec3 n = normalize(normal);
 	float diffuse = max(0.0, dot(light, n));
 	float specular = 0.0; //pow(max(0.0, -reflect(light, n).z), 32.0) * sqrt(diffuse);
 	gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), 1.0);
+	
+	// Make mountain disappear if underwater or above water
+	if (y <= 0.0 && flipped == 0.0)
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
 }
 </script>
 
