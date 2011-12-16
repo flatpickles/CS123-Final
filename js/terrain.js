@@ -13,9 +13,12 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.gridLen = Math.pow(2, this.depth) + 1;
 	this.allPoints = [];
 	this.orderedPoints = [];
+	this.flippedOrderedPoints = [];
 	this.normals = [];
 	this.orderedNormals = [];
+	this.flippedOrderedNormals = [];
 	this.mesh = new GL.Mesh({ normals: true});
+	this.flippedMesh = new GL.Mesh({ normals: true});
 	this.triangles = []
 	
 	this.getPerturb = function(currDepth) {
@@ -86,30 +89,28 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	}
 	
 	this.drawWithShader = function(shader) {
-		shader.draw(this.mesh);
+		shader.uniforms({
+			flipped: 0.0
+		}).draw(this.mesh);
+	//	shader.uniforms({
+	//		flipped: 1.0
+	//	}).draw(this.flippedMesh);
 		//terrainShader.drawBuffers(this.mesh.vertexBuffers, null, gl.LINE);
 	}
 	
 	this.calcStrip = function() {
 		for (var row = 0; row < this.gridLen - 1; row++) {
 			for (var col = 0; col < this.gridLen - 1; col++) {
-				var indextl = 
-				this.getIndex(new GridPoint(col, row));
+				var indextl = this.getIndex(new GridPoint(col, row));
 				var indexbl = this.getIndex(new GridPoint(col, row + 1));
 				var indextr = this.getIndex(new GridPoint(col + 1, row));
 				var indexbr = this.getIndex(new GridPoint(col + 1, row + 1));
 				
-				this.triangles.push([indextl, indexbl, indextr]);
-				this.triangles.push([indexbl, indexbr, indextr]);
-				
-				//var currPt = this.allPoints[index1];
-				//var anotherPt = this.allPoints[index2];
-				//var currNor = this.normals[index1];
-				//var anotherNor = this.normals[index2];
-				//this.stripPoints.push([currPt.x, currPt.y, currPt.z]);
-				//this.stripPoints.push([anotherPt.x, anotherPt.y, anotherPt.z]);
-				//this.stripNormals.push([currNor.x, currNor.y, currNor.z]);
-				//this.stripNormals.push([anotherNor.x, anotherNor.y, anotherNor.z]);
+			//	if (this.allPoints[indextl].y > 0 || this.allPoints[indexbl].y > 0 || this.allPoints[indextr].y > 0 || this.allPoints[indexbr].y > 0) {
+					
+					this.triangles.push([indextr, indexbl, indextl]);
+					this.triangles.push([indextr, indexbr, indexbl]);
+			//	}
 			}
 		}
 		
@@ -119,7 +120,9 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 				var curr = this.allPoints[this.getIndex(new GridPoint(col, row))];
 				var currNorm = this.normals[this.getIndex(new GridPoint(col, row))];
 				this.orderedPoints.push([curr.x, curr.y, curr.z]);
+				this.flippedOrderedPoints.push([curr.x, -curr.y, curr.z]);
 				this.orderedNormals.push([currNorm.x, currNorm.y, currNorm.z]);
+				this.flippedOrderedNormals.push([currNorm.x, -currNorm.y, currNorm.z]);
 			}
 		}
 	}
@@ -199,7 +202,11 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 		this.mesh.vertices = this.orderedPoints;
 		this.mesh.normals = this.orderedNormals;
 		this.mesh.triangles = this.triangles;
+		this.flippedMesh.vertices = this.flippedOrderedPoints;
+		this.flippedMesh.normals = this.flippedOrderedNormals;
+		this.flippedMesh.triangles = this.triangles;
 		this.mesh.compile();
+		this.flippedMesh.compile();
 	}
 	
 	this.init();

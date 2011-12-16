@@ -1,11 +1,17 @@
-var Vector = function(x, y, z) {
+var Vector = function(x, y, z, a) {
 	this.x = x;
 	this.y = y;
 	this.z = z;
+	this.a = a;
+	if (a == undefined) this.a = 1.0;
 	
 	this.getArray = function () {
 		return [this.x, this.y, this.z];
 	};
+	
+	this.getArray4 = function() {
+		return [this.x, this.y, this.z, this.a];
+	}
 }
 
 var GRAVITY = -25;
@@ -24,6 +30,9 @@ var trailsShader = new GL.Shader('lineVert', 'lineFrag');
 
 var planeMesh = GL.Mesh.plane({ coords: true });
 var planeShader = new GL.Shader('planeVert', 'planeFrag');
+
+//var reflectionMesh = GL.Mesh.plane({ coords: true });
+//var reflectionTexture = GL.Texture(
 
 var camera = new GL.Vector(0, 700, 900);
 var angleX = -30;
@@ -67,6 +76,7 @@ var colorVectors = [
 ];
 
 var brightnessBoom = 0;
+var flipped = false;
 
 // A list of all the points to be drawn. For points A, B: [ax, ay, az, bx, by, bz]
 //var pointDict = {"vertices": [[2,3,4], [1,2,3]]};
@@ -146,8 +156,8 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 				trailsBuffer.push(secondPoint.getArray());
 				firstPoint.y = -firstPoint.y;
 				secondPoint.y = -secondPoint.y;
-				trailsBuffer.push(firstPoint.getArray());
-				trailsBuffer.push(secondPoint.getArray());
+				//trailsBuffer.push(firstPoint.getArray());
+				//trailsBuffer.push(secondPoint.getArray());
 				
 			}
 		
@@ -155,8 +165,9 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 			positionsBuffer.push(pos.getArray());
 			var flippedPos = pos.getArray();
 			flippedPos[1] = -flippedPos[1];
-			positionsBuffer.push(flippedPos);
-			colorsBuffer.push(color.getArray());
+			//positionsBuffer.push(flippedPos);
+				
+			//colorsBuffer.push(color.getArray());
 			colorsBuffer.push(color.getArray());
 			
 			
@@ -260,57 +271,10 @@ function init() {
 	};
 
 	gl.ondraw = function() {
-		
-		// Necessary to properly do reflections in water
-		gl.enable(gl.DEPTH_TEST);
-		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		
-		// Set brightness of the screen depending on whether or not a firework
-		// recently exploded or not
-		if (brightnessBoom > 1) {
-			gl.clearColor(0.02*brightnessBoom, 0.02*brightnessBoom, 0.02*brightnessBoom, 1.0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			brightnessBoom--;
-		} else if (brightnessBoom == 0) {
-			gl.clearColor(0, 0, 0, 0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-		}	
-		
-		// Do a camera transformation before painting everything
-		doCameraTransformation(gl);
-		
-		if (positionsBuffer.length != colorsBuffer.length)
-			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
-			
-		// Set up the mesh and draw it based on the buffers
-		pointsMesh.vertices = positionsBuffer;
-		pointsMesh.colors = colorsBuffer;
-		pointsMesh.compile();
-		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
-		
-		// Draw the trails 
-		trailsMesh.vertices = trailsBuffer;
-		trailsMesh.compile();
-		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
-
-		// Draw terrain
-		terrain.drawWithShader(terrainShader);
-		
-		// Rotate before drawing the plane
-		gl.scale(PLANE_WORLD_SIZE, 1.0, PLANE_WORLD_SIZE);
-		gl.rotate(90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
-		
-		// Draw the water texture
-		waterTexture.bind(0);
-		planeShader.uniforms({
-			texture: 0, 
-			tiling: 6
-		}).draw(planeMesh);
-		waterTexture.unbind(0);
-		
-		
-	
+		//flipped = false;
+		finalDraw();
+		//flipped = true;
+		//drawOnce();
 	};
 	
 	gl.onmousedown = function(e) {
@@ -329,6 +293,176 @@ function init() {
 		}  
 	};
 	
+	function drawOnce() {
+		gl.enable(gl.CULL_FACE);
+		if (flipped)
+			gl.cullFace(gl.FRONT);
+		else
+			gl.cullFace(gl.BACK);
+		
+		// Necessary to properly do reflections in water
+		gl.enable(gl.DEPTH_TEST);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		
+		// Set brightness of the screen depending on whether or not a firework
+		// recently exploded or not
+		/*if (brightnessBoom > 1) {
+			gl.clearColor(0.02*brightnessBoom, 0.02*brightnessBoom, 0.02*brightnessBoom, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			brightnessBoom--;
+		} else if (brightnessBoom == 0) {
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+		}	*/
+		
+		
+		
+		// Do a camera transformation before painting everything
+		doCameraTransformation(gl);
+		
+		if (positionsBuffer.length != colorsBuffer.length)
+			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
+			
+		// Set up the mesh and draw it based on the buffers
+		pointsMesh.vertices = positionsBuffer;
+		pointsMesh.colors = colorsBuffer;
+		pointsMesh.compile();
+		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
+		
+		// Draw the trails 
+		trailsMesh.vertices = trailsBuffer;
+		trailsMesh.compile();
+		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
+
+		
+		
+		// Rotate before drawing the plane
+		gl.scale(PLANE_WORLD_SIZE, 1.0, PLANE_WORLD_SIZE);
+		gl.rotate(-90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
+		
+		// Draw the water texture
+		/*waterTexture.bind(0);
+		planeShader.uniforms({
+			texture: 0, 
+			tiling: 12
+		}).draw(planeMesh);
+		waterTexture.unbind(0);*/
+		
+		// Draw terrain
+		doCameraTransformation(gl);
+		terrain.drawWithShader(terrainShader);
+		
+	};
+	
+	
+	function finalDraw() {
+		//gl.clearColor(0.0, 0.0, 0.0, 0.0);
+		//gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.enable(gl.CULL_FACE);
+		//gl.enable(gl.DEPTH_TEST);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		
+		
+		//if (flipped)
+		//	gl.cullFace(gl.FRONT);
+		//else
+		
+		
+		
+		// Necessary to properly do reflections in water		
+		// Set brightness of the screen depending on whether or not a firework
+		// recently exploded or not
+		/*if (brightnessBoom > 1) {
+			gl.clearColor(0.02*brightnessBoom, 0.02*brightnessBoom, 0.02*brightnessBoom, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			brightnessBoom--;
+		} else if (brightnessBoom == 0) {
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+		}	*/
+		
+		
+
+		
+		
+		
+		gl.disable(gl.DEPTH_TEST);
+		gl.cullFace(gl.FRONT);
+		doCameraTransformation(gl, true);
+		terrain.drawWithShader(terrainShader);
+		
+		// Draw reflected fireworks and trails
+		gl.enable(gl.DEPTH_TEST);
+		gl.cullFace(gl.FRONT);
+		doCameraTransformation(gl, true);
+		
+		// Set up the mesh and draw it based on the buffers
+		pointsMesh.vertices = positionsBuffer;
+		pointsMesh.colors = colorsBuffer;
+		pointsMesh.compile();
+		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
+		
+		// Draw the trails 
+		trailsMesh.vertices = trailsBuffer;
+		trailsMesh.compile();
+		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
+		
+		
+		//Draw real fireworks/trails
+		// Do a camera transformation before painting everything
+		gl.enable(gl.DEPTH_TEST);
+		gl.cullFace(gl.BACK);
+		doCameraTransformation(gl, false);
+		
+		if (positionsBuffer.length != colorsBuffer.length)
+			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
+			
+		// Set up the mesh and draw it based on the buffers
+		pointsMesh.vertices = positionsBuffer;
+		pointsMesh.colors = colorsBuffer;
+		pointsMesh.compile();
+		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
+		
+		// Draw the trails 
+		trailsMesh.vertices = trailsBuffer;
+		trailsMesh.compile();
+		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
+		
+		
+		
+		// Rotate before drawing the plane
+		gl.cullFace(gl.BACK);
+		doCameraTransformation(gl, false);
+		gl.scale(PLANE_WORLD_SIZE, 1.0, PLANE_WORLD_SIZE);
+		gl.rotate(-90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
+			
+		
+		gl.enable(gl.DEPTH_TEST);
+		// Draw the water texture
+		waterTexture.bind(0);
+		planeShader.uniforms({
+			texture: 0, 
+			tiling: 12
+		}).draw(planeMesh);
+		waterTexture.unbind(0);
+		
+		gl.enable(gl.DEPTH_TEST);
+		gl.cullFace(gl.BACK);
+		doCameraTransformation(gl, false);
+		terrain.drawWithShader(terrainShader);
+		
+		
+		
+		
+		
+		// Draw terrain
+		//doCameraTransformation(gl);
+		
+		
+	};
+	
 	
 	
 	gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
@@ -337,11 +471,13 @@ function init() {
 
 };
 
-function doCameraTransformation(gl) {
+function doCameraTransformation(gl, swap) {
 	gl.loadIdentity();
 	gl.rotate(-angleX, 1, 0, 0);
 	gl.rotate(-angleY, 0, 1, 0);
 	gl.translate(-camera.x, -camera.y, -camera.z);
+	if (swap)
+		gl.scale(1.0, -1.0, 1.0);
 };
 
 
