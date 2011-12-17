@@ -42,7 +42,7 @@ void main() {
 	if (coord.x == 1.0) newCoord.x = 1.0;
 	newCoord.y = mod(coord.y*tiling, 1.0);
 	if (coord.y == 1.0) newCoord.y = 1.0;
-	gl_FragColor = vec4(texture2D(texture, newCoord).xyz, 0.75);
+	gl_FragColor = vec4(texture2D(texture, newCoord).xyz, 0.55);
 }
 </script>
 	
@@ -82,7 +82,7 @@ void main() {
 	newCoord.y = mod(gl_TexCoord.y*tiling, 1.0);
 	if (gl_TexCoord.y == 1.0) newCoord.y = 1.0;
 	
-	const vec3 lightDir = vec3(1.0, 2.0, 3.0) / 3.741657386773941;
+	const vec3 lightDir = vec3(-3.0, 8.0, -20.0) / 10.8742816;
 	light = (gl_ModelViewMatrix * vec4(lightDir, 0.0)).xyz;
 	color = vec3(0.0, 0.8, 0.0);
 	normal = gl_NormalMatrix * gl_Normal;
@@ -137,7 +137,7 @@ void main() {
 	// gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), 1.0);
 	
 	// mountain texturing stuff
-	gl_FragColor = sampleTextures();// * intensity;
+	gl_FragColor = sampleTextures() * intensity;
 	gl_FragColor.a = 1.0;
 	
 	// Make mountain disappear if underwater or above water

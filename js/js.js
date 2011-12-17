@@ -22,7 +22,7 @@ var MIN_AGE = -10;
 var AIR_RESISTANCE = 0.020;
 var INITIAL_SPEED = 600;
 var RECUR_DEPTH = 2;
-var PLANE_WORLD_SIZE = 1500;
+var PLANE_WORLD_SIZE = 4500;
 
 var gl = GL.create();
 var trailsMesh = new GL.Mesh();
@@ -45,37 +45,6 @@ var trailsBuffer = [];
 
 // Water texture
 var waterTexture = GL.Texture.fromURL('textures/water.jpg');
-
-
-var colorVectors = [
-	new Vector(255, 100, 0),
-	new Vector(255, 0, 0),
-	new Vector(255, 42, 42), 
-	new Vector(255, 94, 0), 
-	new Vector(255, 183, 0), 
-	new Vector(247, 255, 0), 
-	new Vector(106, 255, 0), 
-	new Vector(255, 200, 0), 
-	new Vector(0, 136, 255), 
-	new Vector(250, 0, 255), 
-	new Vector(255, 0, 128), 
-	new Vector(198, 255, 213), 
-	new Vector(198, 246, 255), 
-	new Vector(255, 198, 240),
-	new Vector(52, 72, 141), 
-	new Vector(219, 102, 120), 
-	new Vector(0, 72, 255), 
-	new Vector(253, 165, 68), 
-	new Vector(255, 71, 131), 
-	new Vector(245, 129, 44), 
-	new Vector(181, 255, 169), 
-	new Vector(0, 255, 0), 
-	new Vector(255, 255, 0), 
-	new Vector(255, 0, 0), 
-	new Vector(0, 0, 255), 
-	new Vector(0, 255, 255), 
-];
-
 var brightnessBoom = 0;
 var flipped = false;
 
@@ -87,6 +56,36 @@ var meshShader = new GL.Shader('pointVert', 'pointFrag');
 
 var terrain = new TerrainGrid(3000, 3000, 100);
 var terrainShader = new GL.Shader('terrainVert', 'terrainFrag');
+
+// Setup sky 
+
+var urls = [];
+urls.push("textures/skybox/nx.jpg");
+urls.push("textures/skybox/px.jpg");
+urls.push("textures/skybox/py.jpg");
+urls.push("textures/skybox/ny.jpg")
+urls.push("textures/skybox/nz.jpg");
+urls.push("textures/skybox/pz.jpg");
+
+var cubeMap = GL.CubeMap.fromURLs(urls);
+var skybox = GL.Mesh.cube({ coords: true });
+skybox.transform(GL.Matrix.scale(4000, 4000, 4000));
+skybox.transform(GL.Matrix.translate(0, 0, 0));
+
+
+var skyboxShader = new GL.Shader('\
+  varying vec3 pos;\
+  void main() {\
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
+	pos = gl_Vertex.xyz;\
+  }\
+', '\
+  uniform samplerCube cubeMap;\
+  varying vec3 pos;\
+  void main() {\
+	gl_FragColor = textureCube(cubeMap, normalize(pos));\
+  }\
+');
 
 // Firework orb explodes when lifetime reaches zero
 function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth, hideTrail) {
@@ -278,22 +277,35 @@ function init() {
 		//drawOnce();
 	};
 	
-	gl.onmousedown = function(e) {
+	var dragging = false;
+	var prevE = null;
+	
+	window.onmousedown = function(e) {
 		var tracer = new GL.Raytracer();
 		var ray = tracer.getRayForPixel(e.x, e.y);
 		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
 		//fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, -200), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 1, false, 1)); // wont work because not rotated
 		//fireworks.push(new Firework(new Vector(-50, 250, 500), new Vector(0, 100, 0), new Vector(1.0, 0, 0), 0, true, 1));
+		dragging = true;
+		prevE = e;
 	};
 	
-	gl.onmousemove = function(e) {
-		if (e.dragging) {
-			angleY -= e.deltaX * 0.25;
-			angleX = Math.max(-90, Math.min(90, angleX - e.deltaY * 0.25));
+	window.onmouseup = function(e) {
+		dragging = false;
+	}
+	
+	window.onmousemove = function(e) {
+		if (dragging) {
+			var deltaX = -prevE.x + e.x;
+			var deltaY = -prevE.y + e.y;
+			angleY -= deltaX * 0.25;
+			angleX = Math.max(-90, Math.min(90, angleX - deltaY * 0.25));
 			//fireworks.push(new Firework(new Vector(0, 500, 500), new Vector(0, 300, 0), new Vector(1.0, 0, 0), 0, true, 1));
 		}  
+		
+		prevE = e;
 	};
-	
+		
 	function drawOnce() {
 		gl.enable(gl.CULL_FACE);
 		if (flipped)
@@ -387,6 +399,11 @@ function init() {
 		
 
 		
+		// Draw skybox
+		gl.cullFace(gl.FRONT);
+		doCameraTransformation(gl, false);
+		cubeMap.bind();
+		skyboxShader.draw(skybox);
 		
 		
 		gl.disable(gl.DEPTH_TEST);
@@ -454,8 +471,6 @@ function init() {
 		doCameraTransformation(gl, false);
 		terrain.drawWithShader(terrainShader);
 		
-		// Draw terrain
-		//doCameraTransformation(gl);
 		
 		
 	};
