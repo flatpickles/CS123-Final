@@ -6,6 +6,7 @@ function GridPoint(x, y) {
 	this.y = y;
 }
 
+var orderedPoints = [];
 function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.decay = 1;
 	this.depth = 6;
@@ -13,7 +14,7 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.dip = (sizeX + sizeZ) / 2 * .25;
 	this.gridLen = Math.pow(2, this.depth) + 1;
 	this.allPoints = [];
-	this.orderedPoints = [];
+	this.orderedPoints = orderedPoints;
 	this.flippedOrderedPoints = [];
 	this.normals = [];
 	this.orderedNormals = [];
@@ -144,7 +145,7 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 			//	}
 			}
 		}
-		
+			
 		
 		for (var row = 0; row < this.gridLen; row++) {
 			for (var col = 0; col < this.gridLen; col++) {
@@ -156,6 +157,25 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 				this.flippedOrderedNormals.push([currNorm.x, -currNorm.y, currNorm.z]);
 			}
 		}
+
+		function comparator(triangle1, triangle2) {
+				
+			var tri1point1 = orderedPoints[triangle1[0]];			
+			var tri1point2 = orderedPoints[triangle1[1]];
+			var tri1point3 = orderedPoints[triangle1[2]];
+			var tri1pointAvg = [(tri1point1[0] + tri1point2[0] + tri1point3[0])/3.0, (tri1point1[1] + tri1point2[1] + tri1point3[1])/3.0, (tri1point1[2] + tri1point2[2] + tri1point3[2])/3.0];
+			var distFromCenter1 = Math.sqrt(tri1pointAvg[0]*tri1pointAvg[0] + tri1pointAvg[1]*tri1pointAvg[1] + tri1pointAvg[2]*tri1pointAvg[2]);
+			
+			var tri2point1 = orderedPoints[triangle2[0]];
+			var tri2point2 = orderedPoints[triangle2[1]];
+			var tri2point3 = orderedPoints[triangle2[2]];
+			var tri2pointAvg = [(tri2point1[0] + tri2point2[0] + tri2point3[0])/3.0, (tri2point1[1] + tri2point2[1] + tri2point3[1])/3.0, (tri2point1[2] + tri2point2[2] + tri2point3[2])/3.0];
+			var distFromCenter2 = Math.sqrt(tri2pointAvg[0]*tri2pointAvg[0] + tri2pointAvg[1]*tri2pointAvg[1] + tri2pointAvg[2]*tri2pointAvg[2]);
+			
+			return distFromCenter2 - distFromCenter1;			
+		}
+
+		this.triangles = this.triangles.sort(comparator);
 	}
 	
 	this.getNeighbors = function(coordinate) {
