@@ -43,6 +43,26 @@ void main() {
 	newCoord.y = mod(coord.y*tiling, 1.0);
 	if (coord.y == 1.0) newCoord.y = 1.0;
 	gl_FragColor = vec4(texture2D(texture, newCoord).xyz, 0.55);
+	
+	
+	float darkColor = 0.06843;
+	float shadeRange = 0.3;
+	if (coord.x < shadeRange) {
+		float overlay = 1.0 - pow(coord.x / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 1.0), overlay);
+	} else if (coord.x > 1.0 - shadeRange) {
+		float overlay = 1.0 - pow((1.0 - coord.x) / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 1.0), overlay);
+	}
+	
+	if (coord.y < shadeRange) {
+		float overlay = 1.0 - pow(coord.y / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 1.0), overlay);
+	} else if (coord.y > 1.0 - shadeRange) {
+		float overlay = 1.0 - pow((1.0 - coord.y) / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 1.0), overlay);
+	}
+	
 }
 </script>
 	

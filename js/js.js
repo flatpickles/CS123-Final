@@ -370,6 +370,7 @@ function init() {
 	
 	
 	function finalDraw() {
+		gl.enable(gl.FOG);
 		//gl.clearColor(0.0, 0.0, 0.0, 0.0);
 		//gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.enable(gl.CULL_FACE);
