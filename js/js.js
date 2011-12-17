@@ -22,7 +22,7 @@ var MIN_AGE = -10;
 var AIR_RESISTANCE = 0.020;
 var INITIAL_SPEED = 600;
 var RECUR_DEPTH = 2;
-var PLANE_WORLD_SIZE = 500;
+var PLANE_WORLD_SIZE = 1500;
 
 var gl = GL.create();
 var trailsMesh = new GL.Mesh();
@@ -45,6 +45,7 @@ var trailsBuffer = [];
 
 // Water texture
 var waterTexture = GL.Texture.fromURL('textures/water.jpg');
+
 
 var colorVectors = [
 	new Vector(255, 100, 0),
@@ -84,7 +85,7 @@ var pointsMesh = new GL.Mesh();
 pointsMesh.addVertexBuffer('colors', 'gl_Color');
 var meshShader = new GL.Shader('pointVert', 'pointFrag');
 
-var terrain = new TerrainGrid(1000, 1000, 100);
+var terrain = new TerrainGrid(3000, 3000, 100);
 var terrainShader = new GL.Shader('terrainVert', 'terrainFrag');
 
 // Firework orb explodes when lifetime reaches zero
@@ -237,7 +238,7 @@ function init() {
 	var color = new Vector(1.0, 0, 0);
 	var lifetime = 1; // explode after three seconds
 	
-	fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH, true));
+	setTimeout(function() {fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH, true))}, 2000);
 
 	gl.onupdate = function(seconds) {
 		// Clear buffers to be recomputed
@@ -452,10 +453,6 @@ function init() {
 		gl.cullFace(gl.BACK);
 		doCameraTransformation(gl, false);
 		terrain.drawWithShader(terrainShader);
-		
-		
-		
-		
 		
 		// Draw terrain
 		//doCameraTransformation(gl);

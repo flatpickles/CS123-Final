@@ -1,5 +1,6 @@
 /****** PROCEDURAL TERRAIN WITH A LAKE ******/
 
+
 function GridPoint(x, y) {
 	this.x = x;
 	this.y = y;
@@ -7,8 +8,8 @@ function GridPoint(x, y) {
 
 function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.decay = 1;
-	this.depth = 5;
-	this.roughness = (sizeX + sizeZ) / 2 * .1;
+	this.depth = 6;
+	this.roughness = (sizeX + sizeZ) / 2 * .08;
 	this.dip = (sizeX + sizeZ) / 2 * .25;
 	this.gridLen = Math.pow(2, this.depth) + 1;
 	this.allPoints = [];
@@ -17,9 +18,17 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.normals = [];
 	this.orderedNormals = [];
 	this.flippedOrderedNormals = [];
-	this.mesh = new GL.Mesh({ normals: true});
-	this.flippedMesh = new GL.Mesh({ normals: true});
-	this.triangles = []
+	this.mesh = new GL.Mesh({ normals: true, coords: true});
+	this.flippedMesh = new GL.Mesh({ normals: true, coords: true});
+	this.triangles = [];
+	
+	
+
+	// mountain textures
+	this.grassTexture = GL.Texture.fromURL('textures/grass.jpg');
+	this.dirtTexture = GL.Texture.fromURL('textures/dirt.jpg');
+	this.rockTexture = GL.Texture.fromURL('textures/rock.jpg');
+	this.snowTexture = GL.Texture.fromURL('textures/snow.jpg');
 	
 	this.getPerturb = function(currDepth) {
 		var pert = this.roughness
@@ -79,8 +88,8 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	this.makeLake = function() {
 		for (var row = 0; row < this.gridLen; row++) {
 			for (var col = 0; col < this.gridLen; col++) {
-				var centerOffsetX = Math.max(Math.abs(col - this.gridLen / 2) - 3, 0);
-				var centerOffsetY = Math.max(Math.abs(row - this.gridLen / 2) - 3, 0);
+				var centerOffsetX = Math.max(Math.abs(col - this.gridLen / 2) - 3.5, 0);
+				var centerOffsetY = Math.max(Math.abs(row - this.gridLen / 2) - 3.5, 0);
 				var centerCoeff = .8 - Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY) / (this.gridLen / 2);
 				centerCoeff = centerCoeff * centerCoeff * centerCoeff * centerCoeff * 2;
 				this.allPoints[this.getIndex(new GridPoint(col, row))].y -= centerCoeff * this.dip;
@@ -89,13 +98,30 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 	}
 	
 	this.drawWithShader = function(shader) {
+		this.dirtTexture.bind(0);
+		this.snowTexture.bind(1);
+		this.rockTexture.bind(2);
+		this.grassTexture.bind(3);
+				
 		shader.uniforms({
-			flipped: 0.0
+			dirtTexture: 0,
+			snowTexture: 1,
+			rockTexture: 2,
+			grassTexture: 3,
+			dirtMin: -10.0,
+			dirtMax: -5.0,
+			grassMin: -5.0,
+			grassMax: 0.0,
+			rockMin: 0.0,
+			snowMin: 5.0,
+			snowMax: 10.0
 		}).draw(this.mesh);
-	//	shader.uniforms({
-	//		flipped: 1.0
-	//	}).draw(this.flippedMesh);
-		//terrainShader.drawBuffers(this.mesh.vertexBuffers, null, gl.LINE);
+		
+		this.dirtTexture.unbind(0);
+		this.snowTexture.unbind(1);
+		this.rockTexture.unbind(2);
+		this.grassTexture.unbind(3);
+		
 	}
 	
 	this.calcStrip = function() {
@@ -205,6 +231,7 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 		this.flippedMesh.vertices = this.flippedOrderedPoints;
 		this.flippedMesh.normals = this.flippedOrderedNormals;
 		this.flippedMesh.triangles = this.triangles;
+		this.mesh.coords = [[0,0], [1,0], [0,1], [1,1]];
 		this.mesh.compile();
 		this.flippedMesh.compile();
 	}
