@@ -160,9 +160,31 @@ void main() {
 	gl_FragColor = sampleTextures() * intensity;
 	gl_FragColor.a = 1.0;
 	
+	// Fade out the edges of the mountain into the water
+	float darkColor = 0.0;
+	float shadeRange = 0.05;
+	if (coord.x < shadeRange) {
+		float overlay = 1.0 - pow(coord.x / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 0.0), overlay);
+	} else if (coord.x > 1.0 - shadeRange) {
+		float overlay = 1.0 - pow((1.0 - coord.x) / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 0.0), overlay);
+	}
+	
+	if (coord.y < shadeRange) {
+		float overlay = 1.0 - pow(coord.y / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 0.0), overlay);
+	} else if (coord.y > 1.0 - shadeRange) {
+		float overlay = 1.0 - pow((1.0 - coord.y) / shadeRange, 3.0);
+		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 0.0), overlay);
+	}
+	
+	
 	// Make mountain disappear if underwater or above water
 	if (y < 0.0)
 		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+		
+		
 }
 </script>
 

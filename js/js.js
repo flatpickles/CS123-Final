@@ -18,7 +18,7 @@ var GRAVITY = -25;
 var TESSELATION = 2;
 var NUM_SUB_FIREWORKS = 30;
 var EXPLOSIVITY = 45.0;
-var MIN_AGE = -10; 
+var MIN_AGE = -1; 
 var AIR_RESISTANCE = 0.020;
 var INITIAL_SPEED = 600;
 var RECUR_DEPTH = 2;
@@ -225,8 +225,24 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 
 	};
 	
+
 	
 };
+
+Firework.generate = function () {
+	var pos = new Vector(0, 0, 0);
+	var vel = new Vector(Math.random()*500.0 - 250, INITIAL_SPEED*(Math.random() + 1.0), Math.random()*500.0 - 250);
+	var color = new Vector(Math.random()*.95 + .05, Math.random()*.95 + .05, Math.random()*.95 + .05);
+	var lifetime = 1 + Math.random()*0.5; // explode after one second
+	var depth = RECUR_DEPTH;
+	
+	var hugeRandom = Math.random();
+	if (hugeRandom > 0.6) {
+		vel.y *= 2.5;
+	}
+	return new Firework(pos, vel, color, lifetime, true, depth, true);
+};
+
 
 function init() {
 	
@@ -237,8 +253,11 @@ function init() {
 	var color = new Vector(1.0, 0, 0);
 	var lifetime = 1; // explode after three seconds
 	
-	setTimeout(function() {fireworks.push(new Firework(pos, vel, color, lifetime, true, RECUR_DEPTH, true))}, 2000);
-
+	setInterval(function() {
+		var firework = Firework.generate();
+		fireworks.push(firework);
+	}, 2000);
+	
 	gl.onupdate = function(seconds) {
 		// Clear buffers to be recomputed
 		positionsBuffer = [];
@@ -271,105 +290,6 @@ function init() {
 	};
 
 	gl.ondraw = function() {
-		//flipped = false;
-		finalDraw();
-		//flipped = true;
-		//drawOnce();
-	};
-	
-	var dragging = false;
-	var prevE = null;
-	
-	window.onmousedown = function(e) {
-		var tracer = new GL.Raytracer();
-		var ray = tracer.getRayForPixel(e.x, e.y);
-		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
-		//fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, -200), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 1, false, 1)); // wont work because not rotated
-		//fireworks.push(new Firework(new Vector(-50, 250, 500), new Vector(0, 100, 0), new Vector(1.0, 0, 0), 0, true, 1));
-		dragging = true;
-		prevE = e;
-	};
-	
-	window.onmouseup = function(e) {
-		dragging = false;
-	}
-	
-	window.onmousemove = function(e) {
-		if (dragging) {
-			var deltaX = -prevE.x + e.x;
-			var deltaY = -prevE.y + e.y;
-			angleY -= deltaX * 0.25;
-			angleX = Math.max(-90, Math.min(90, angleX - deltaY * 0.25));
-			//fireworks.push(new Firework(new Vector(0, 500, 500), new Vector(0, 300, 0), new Vector(1.0, 0, 0), 0, true, 1));
-		}  
-		
-		prevE = e;
-	};
-		
-	function drawOnce() {
-		gl.enable(gl.CULL_FACE);
-		if (flipped)
-			gl.cullFace(gl.FRONT);
-		else
-			gl.cullFace(gl.BACK);
-		
-		// Necessary to properly do reflections in water
-		gl.enable(gl.DEPTH_TEST);
-		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		
-		// Set brightness of the screen depending on whether or not a firework
-		// recently exploded or not
-		/*if (brightnessBoom > 1) {
-			gl.clearColor(0.02*brightnessBoom, 0.02*brightnessBoom, 0.02*brightnessBoom, 1.0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			brightnessBoom--;
-		} else if (brightnessBoom == 0) {
-			gl.clearColor(0, 0, 0, 0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-		}	*/
-		
-		
-		
-		// Do a camera transformation before painting everything
-		doCameraTransformation(gl);
-		
-		if (positionsBuffer.length != colorsBuffer.length)
-			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
-			
-		// Set up the mesh and draw it based on the buffers
-		pointsMesh.vertices = positionsBuffer;
-		pointsMesh.colors = colorsBuffer;
-		pointsMesh.compile();
-		meshShader.drawBuffers(pointsMesh.vertexBuffers, null, gl.POINTS);
-		
-		// Draw the trails 
-		trailsMesh.vertices = trailsBuffer;
-		trailsMesh.compile();
-		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
-
-		
-		
-		// Rotate before drawing the plane
-		gl.scale(PLANE_WORLD_SIZE, 1.0, PLANE_WORLD_SIZE);
-		gl.rotate(-90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
-		
-		// Draw the water texture
-		/*waterTexture.bind(0);
-		planeShader.uniforms({
-			texture: 0, 
-			tiling: 12
-		}).draw(planeMesh);
-		waterTexture.unbind(0);*/
-		
-		// Draw terrain
-		doCameraTransformation(gl);
-		terrain.drawWithShader(terrainShader);
-		
-	};
-	
-	
-	function finalDraw() {
 		gl.enable(gl.FOG);
 		//gl.clearColor(0.0, 0.0, 0.0, 0.0);
 		//gl.clear(gl.COLOR_BUFFER_BIT);
@@ -379,34 +299,13 @@ function init() {
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
 		
-		//if (flipped)
-		//	gl.cullFace(gl.FRONT);
-		//else
-		
-		
-		
-		// Necessary to properly do reflections in water		
-		// Set brightness of the screen depending on whether or not a firework
-		// recently exploded or not
-		/*if (brightnessBoom > 1) {
-			gl.clearColor(0.02*brightnessBoom, 0.02*brightnessBoom, 0.02*brightnessBoom, 1.0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			brightnessBoom--;
-		} else if (brightnessBoom == 0) {
-			gl.clearColor(0, 0, 0, 0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
-		}	*/
-		
-		
-
-		
-		// Draw skybox
+		// Draw skybox, set culling to be the front since we're inside
 		gl.cullFace(gl.FRONT);
 		doCameraTransformation(gl, false);
 		cubeMap.bind();
-		skyboxShader.draw(skybox);
+		skyboxShader.draw(skybox);		
 		
-		
+		// Draw terrain reflections with no depth test
 		gl.disable(gl.DEPTH_TEST);
 		gl.cullFace(gl.FRONT);
 		doCameraTransformation(gl, true);
@@ -471,13 +370,37 @@ function init() {
 		gl.cullFace(gl.BACK);
 		doCameraTransformation(gl, false);
 		terrain.drawWithShader(terrainShader);
-		
-		
-		
 	};
 	
+	var dragging = false;
+	var prevE = null;
 	
+	window.onmousedown = function(e) {
+		var tracer = new GL.Raytracer();
+		var ray = tracer.getRayForPixel(e.x, e.y);
+		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
+		//fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, -200), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 1, false, 1)); // wont work because not rotated
+		//fireworks.push(new Firework(new Vector(-50, 250, 500), new Vector(0, 100, 0), new Vector(1.0, 0, 0), 0, true, 1));
+		dragging = true;
+		prevE = e;
+	};
 	
+	window.onmouseup = function(e) {
+		dragging = false;
+	}
+	
+	window.onmousemove = function(e) {
+		if (dragging) {
+			var deltaX = -prevE.x + e.x;
+			var deltaY = -prevE.y + e.y;
+			angleY -= deltaX * 0.25;
+			angleX = Math.max(-90, Math.min(90, angleX - deltaY * 0.25));
+			//fireworks.push(new Firework(new Vector(0, 500, 500), new Vector(0, 300, 0), new Vector(1.0, 0, 0), 0, true, 1));
+		}  
+		
+		prevE = e;
+	};
+			
 	gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
 	gl.animate();
 	//console.log(pointsMesh);
