@@ -102,19 +102,24 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 		this.snowTexture.bind(1);
 		this.rockTexture.bind(2);
 		this.grassTexture.bind(3);
-				
+		
+		var start = -60.0;
+		var offset = 75.0;
+		
 		shader.uniforms({
 			dirtTexture: 0,
 			snowTexture: 1,
 			rockTexture: 2,
 			grassTexture: 3,
-			dirtMin: -10.0,
-			dirtMax: -5.0,
-			grassMin: -5.0,
-			grassMax: 0.0,
-			rockMin: 0.0,
-			snowMin: 5.0,
-			snowMax: 10.0
+			dirtMin: start,
+			dirtMax: start + offset,
+			grassMin: start + offset,
+			grassMax: start + 2 * offset,
+			rockMin: start + 2 * offset,
+			rockMax: start + 3 * offset,
+			snowMin: start + 3 * offset,
+			snowMax: start + 5 * offset,
+			tiling: 1
 		}).draw(this.mesh);
 		
 		this.dirtTexture.unbind(0);
@@ -231,9 +236,19 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 		this.flippedMesh.vertices = this.flippedOrderedPoints;
 		this.flippedMesh.normals = this.flippedOrderedNormals;
 		this.flippedMesh.triangles = this.triangles;
-		this.mesh.coords = [[0,0], [1,0], [0,1], [1,1]];
+		this.mesh.coords = this.getCoords();
 		this.mesh.compile();
 		this.flippedMesh.compile();
+	}
+	
+	this.getCoords = function() {
+		var coords = [];
+		for (var row = 0; row < this.gridLen; row++) {
+			for (var col = 0; col < this.gridLen; col++) {
+				coords.push([row/this.gridLen, col/this.gridLen]);
+			}
+		}
+		return coords;
 	}
 	
 	this.init();

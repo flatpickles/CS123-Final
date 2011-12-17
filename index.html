@@ -73,7 +73,15 @@ varying float y;
 varying float intensity;
 varying float height; 
 
+uniform float tiling;
+
 void main() {
+	vec2 newCoord;
+	newCoord.x = mod(gl_TexCoord.x*tiling, 1.0);
+	if (gl_TexCoord.x == 1.0) newCoord.x = 1.0;
+	newCoord.y = mod(gl_TexCoord.y*tiling, 1.0);
+	if (gl_TexCoord.y == 1.0) newCoord.y = 1.0;
+	
 	const vec3 lightDir = vec3(1.0, 2.0, 3.0) / 3.741657386773941;
 	light = (gl_ModelViewMatrix * vec4(lightDir, 0.0)).xyz;
 	color = vec3(0.0, 0.8, 0.0);
@@ -82,7 +90,7 @@ void main() {
 	y = gl_Vertex.y;	
 	height = gl_Vertex.y;
 	intensity = max(0.0, dot(normal, light));
-	coord = gl_MultiTexCoord0.xy;
+	coord = newCoord.xy;
 }
 </script>
 
@@ -129,10 +137,11 @@ void main() {
 	// gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), 1.0);
 	
 	// mountain texturing stuff
-	gl_FragColor = sampleTextures() * intensity;
+	gl_FragColor = sampleTextures();// * intensity;
+	gl_FragColor.a = 1.0;
 	
 	// Make mountain disappear if underwater or above water
-	if (y <= 0.0)
+	if (y < 0.0)
 		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
 }
 </script>
