@@ -1,3 +1,4 @@
+// vector class to model a three or four element data structure
 var Vector = function(x, y, z, a) {
 	this.x = x;
 	this.y = y;
@@ -14,6 +15,7 @@ var Vector = function(x, y, z, a) {
 	}
 }
 
+// some constants
 var GRAVITY = -25;
 var TESSELATION = 2;
 var NUM_SUB_FIREWORKS = 30;
@@ -24,41 +26,24 @@ var INITIAL_SPEED = 600;
 var RECUR_DEPTH = 2;
 var PLANE_WORLD_SIZE = 4500;
 
+// set up GL and meshes
 var gl = GL.create();
 var trailsMesh = new GL.Mesh();
 var trailsShader = new GL.Shader('lineVert', 'lineFrag');
-
 var planeMesh = GL.Mesh.plane({ coords: true });
 var planeShader = new GL.Shader('planeVert', 'planeFrag');
-
-//var reflectionMesh = GL.Mesh.plane({ coords: true });
-//var reflectionTexture = GL.Texture(
-
-var camera = new GL.Vector(0, 700, 900);
-var angleX = -30;
-var angleY = 0;
-
-// Global dicts and arrays
-var positionsBuffer = [];
-var colorsBuffer = [];
-var trailsBuffer = [];
+var pointsMesh = new GL.Mesh();
+pointsMesh.addVertexBuffer('colors', 'gl_Color');
+var meshShader = new GL.Shader('pointVert', 'pointFrag');
+var terrain = new TerrainGrid(3000, 3000, 100);
+var terrainShader = new GL.Shader('terrainVert', 'terrainFrag');
 
 // Water texture
 var waterTexture = GL.Texture.fromURL('textures/water.jpg');
 var brightnessBoom = 0;
 var flipped = false;
 
-// A list of all the points to be drawn. For points A, B: [ax, ay, az, bx, by, bz]
-//var pointDict = {"vertices": [[2,3,4], [1,2,3]]};
-var pointsMesh = new GL.Mesh();
-pointsMesh.addVertexBuffer('colors', 'gl_Color');
-var meshShader = new GL.Shader('pointVert', 'pointFrag');
-
-var terrain = new TerrainGrid(3000, 3000, 100);
-var terrainShader = new GL.Shader('terrainVert', 'terrainFrag');
-
-// Setup sky 
-
+// sky box
 var urls = [];
 urls.push("textures/skybox/nx.jpg");
 urls.push("textures/skybox/px.jpg");
@@ -71,21 +56,17 @@ var cubeMap = GL.CubeMap.fromURLs(urls);
 var skybox = GL.Mesh.cube({ coords: true });
 skybox.transform(GL.Matrix.scale(4000, 4000, 4000));
 skybox.transform(GL.Matrix.translate(0, 0, 0));
+var skyboxShader = new GL.Shader('skyboxVert', 'skyboxFrag');
 
+// initialize the camera
+var camera = new GL.Vector(0, 700, 900);
+var angleX = -30;
+var angleY = 0;
 
-var skyboxShader = new GL.Shader('\
-  varying vec3 pos;\
-  void main() {\
-	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-	pos = gl_Vertex.xyz;\
-  }\
-', '\
-  uniform samplerCube cubeMap;\
-  varying vec3 pos;\
-  void main() {\
-	gl_FragColor = textureCube(cubeMap, normalize(pos));\
-  }\
-');
+// Global dicts and arrays
+var positionsBuffer = [];
+var colorsBuffer = [];
+var trailsBuffer = [];
 
 // Firework orb explodes when lifetime reaches zero
 function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recurDepth, hideTrail) {
@@ -97,8 +78,8 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 	var subFireworks = [];
 	var hasExploded = false;
 	var trailToStart = true;
-	
 	var airResistance = AIR_RESISTANCE/(recurDepth + 1);
+	
 	// Define public methods
 	this.update = function(seconds) {
 		
@@ -124,8 +105,6 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		pos.y += vel.y*seconds;
 		pos.z += vel.z*seconds;
 
-			
-		
 		if (!hasExploded && lifetime >= MIN_AGE && pos.y > 0) {
 
 			var speedThreshold = 10;
@@ -151,30 +130,21 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 					trailToStart = false;
 				}
 				
-				
+				// add trail to buffer
 				trailsBuffer.push(firstPoint.getArray());
 				trailsBuffer.push(secondPoint.getArray());
 				firstPoint.y = -firstPoint.y;
 				secondPoint.y = -secondPoint.y;
-				//trailsBuffer.push(firstPoint.getArray());
-				//trailsBuffer.push(secondPoint.getArray());
-				
 			}
 		
-			// Add to buffers
+			// Add point to buffers
 			positionsBuffer.push(pos.getArray());
 			var flippedPos = pos.getArray();
 			flippedPos[1] = -flippedPos[1];
-			//positionsBuffer.push(flippedPos);
-				
-			//colorsBuffer.push(color.getArray());
 			colorsBuffer.push(color.getArray());
-			
-			
 		}
 		
 		if (lifetime >= 0) {
-
 			lifetime -= seconds; // some decimal
 					
 			// Check for explosion
@@ -211,24 +181,21 @@ function Firework(initPos, initVel, initColor, initLifetime, shouldExplode, recu
 		
 			var phi = Math.random()*Math.PI*2;
 			var theta = Math.random()*Math.PI;
-			
 			var explosionCoeff = EXPLOSIVITY*recurDepth;
-		
 			var newVel = new Vector(vel.x + explosionCoeff*Math.cos(phi)*Math.sin(theta), vel.y + explosionCoeff*Math.sin(phi)*Math.sin(theta), vel.z + explosionCoeff*Math.cos(theta));
-			
 			var newLifetime = 1.5 + -0.5 + Math.random()*1; // explode after three seconds
 			
 			subFireworks.push(new Firework(new Vector(pos.x, pos.y, pos.z), newVel, newColor, newLifetime, true, recurDepth - 1));
 		}
 		
 		hasExploded = true;
-
 	};
 	
 
 	
 };
 
+// create a new firework with randomized velocity, color, lifetime, etc
 Firework.generate = function () {
 	var pos = new Vector(0, 0, 0);
 	var vel = new Vector(Math.random()*500.0 - 250, INITIAL_SPEED*(Math.random() + 1.0), Math.random()*500.0 - 250);
@@ -240,32 +207,31 @@ Firework.generate = function () {
 	if (hugeRandom > 0.6) {
 		vel.y *= 2.5;
 	}
+	
 	return new Firework(pos, vel, color, lifetime, true, depth, true);
 };
 
-
+// get everything started
 function init() {
-	
 	var fireworks = [];
-		
-	var pos = new Vector(0, 0, 0);
-	var vel = new Vector(0, INITIAL_SPEED, 0);
-	var color = new Vector(1.0, 0, 0);
-	var lifetime = 1; // explode after three seconds
 	
+	// generate and add a new firework at a regular interval
 	setInterval(function() {
 		var firework = Firework.generate();
 		fireworks.push(firework);
 	}, 2000);
 	
+	// called when gl updates
 	gl.onupdate = function(seconds) {
 		// Clear buffers to be recomputed
 		positionsBuffer = [];
 		colorsBuffer = [];
 		trailsBuffer = [];
 		
+		// speed variable
 		var speed = seconds*400;
 		
+		// positions have changed, so update the fireworks list
 		var newFireworks = [];
 		for (var i = 0; i < fireworks.length; i++) {
 			// Update the firework and keep it if it's not done
@@ -289,15 +255,11 @@ function init() {
 		
 	};
 
+	// called for each gl draw
 	gl.ondraw = function() {
-		gl.enable(gl.FOG);
-		//gl.clearColor(0.0, 0.0, 0.0, 0.0);
-		//gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.enable(gl.CULL_FACE);
-		//gl.enable(gl.DEPTH_TEST);
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		
 		
 		// Draw skybox, set culling to be the front since we're inside
 		gl.cullFace(gl.FRONT);
@@ -327,15 +289,10 @@ function init() {
 		trailsMesh.compile();
 		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
 		
-		
 		//Draw real fireworks/trails
-		// Do a camera transformation before painting everything
 		gl.enable(gl.DEPTH_TEST);
 		gl.cullFace(gl.BACK);
 		doCameraTransformation(gl, false);
-		
-		if (positionsBuffer.length != colorsBuffer.length)
-			alert("something went horribly wrong.\n\nposBuffer: " + positionsBuffer.length + " and colorsBuffer: " + colorsBuffer.length);
 			
 		// Set up the mesh and draw it based on the buffers
 		pointsMesh.vertices = positionsBuffer;
@@ -348,17 +305,14 @@ function init() {
 		trailsMesh.compile();
 		trailsShader.drawBuffers(trailsMesh.vertexBuffers, null, gl.LINES);
 		
-		
-		
 		// Rotate before drawing the plane
 		gl.cullFace(gl.BACK);
 		doCameraTransformation(gl, false);
 		gl.scale(PLANE_WORLD_SIZE, 1.0, PLANE_WORLD_SIZE);
 		gl.rotate(-90, 1, 0, 0); // rotate around x-axis so that it lays on the XZ plane
-			
-		
-		gl.enable(gl.DEPTH_TEST);
+	
 		// Draw the water texture
+		gl.enable(gl.DEPTH_TEST);
 		waterTexture.bind(0);
 		planeShader.uniforms({
 			texture: 0, 
@@ -366,21 +320,19 @@ function init() {
 		}).draw(planeMesh);
 		waterTexture.unbind(0);
 		
+		// draw the terrain
 		gl.enable(gl.DEPTH_TEST);
 		gl.cullFace(gl.BACK);
 		doCameraTransformation(gl, false);
 		terrain.drawWithShader(terrainShader);
 	};
 	
+	// use basic javascript stuff to do camera movement
+	
 	var dragging = false;
 	var prevE = null;
 	
 	window.onmousedown = function(e) {
-		var tracer = new GL.Raytracer();
-		var ray = tracer.getRayForPixel(e.x, e.y);
-		result = GL.Raytracer.hitTestBox(tracer.eye, ray, new GL.Vector(-1000, -1000, camera.z - 500), new GL.Vector(1000, 1000, camera.z - 501));
-		//fireworks.push(new Firework(new Vector(result.hit.x, result.hit.y, -200), new Vector(0, 0, 0), new Vector(1.0, 0, 0), 1, false, 1)); // wont work because not rotated
-		//fireworks.push(new Firework(new Vector(-50, 250, 500), new Vector(0, 100, 0), new Vector(1.0, 0, 0), 0, true, 1));
 		dragging = true;
 		prevE = e;
 	};
@@ -395,7 +347,6 @@ function init() {
 			var deltaY = -prevE.y + e.y;
 			angleY -= deltaX * 0.25;
 			angleX = Math.max(-90, Math.min(90, angleX - deltaY * 0.25));
-			//fireworks.push(new Firework(new Vector(0, 500, 500), new Vector(0, 300, 0), new Vector(1.0, 0, 0), 0, true, 1));
 		}  
 		
 		prevE = e;
@@ -403,19 +354,15 @@ function init() {
 			
 	gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
 	gl.animate();
-	//console.log(pointsMesh);
-
 };
 
+// transform the camera properly, after loading identity matrix
 function doCameraTransformation(gl, swap) {
 	gl.loadIdentity();
 	gl.rotate(-angleX, 1, 0, 0);
 	gl.rotate(-angleY, 0, 1, 0);
 	gl.translate(-camera.x, -camera.y, -camera.z);
-	if (swap)
-		gl.scale(1.0, -1.0, 1.0);
+	if (swap) gl.scale(1.0, -1.0, 1.0);
 };
-
-
 
 init();

@@ -12,6 +12,22 @@ html, body {
 
 <script type="text/javascript" src="js/lightgl.js"></script>
 
+<script id="skyboxVert" type="text/shader/x-vertex">
+varying vec3 pos;
+void main() {
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	pos = gl_Vertex.xyz;
+}
+</script>
+
+<script id="skyboxFrag" type="text/shader/x-vertex">
+uniform samplerCube cubeMap;
+varying vec3 pos;
+void main() {
+	gl_FragColor = textureCube(cubeMap, normalize(pos));
+}
+</script>
+
 <script id="lineVert" type="text/shader/x-vertex">
 void main() {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
