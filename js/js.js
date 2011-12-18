@@ -213,8 +213,12 @@ Firework.generate = function () {
 };
 
 // get everything started
+var browserReady = true;
 function init() {
 	var fireworks = [];
+	
+	if (!window.WebGLRenderingContext || navigator.userAgent.toLowerCase().indexOf('chrome') < 0)
+		browserReady = false;
 	
 	// generate and add a new firework at a regular interval
 	setInterval(function() {
@@ -366,9 +370,11 @@ function init() {
 		
 		prevE = e;
 	};
-			
-	gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
-	gl.animate();
+	
+	if (browserReady) {		
+		gl.fullscreen({ fov: 45, near: 0.1, far: 100000 });
+		gl.animate();
+	}
 };
 
 // transform the camera properly, after loading identity matrix
