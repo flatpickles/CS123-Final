@@ -248,18 +248,26 @@ function init() {
 		var down = GL.keys.S | GL.keys.DOWN;
 		var forward = GL.Vector.fromAngles((90 - angleY) * Math.PI / 180, (180 - angleX) * Math.PI / 180);
 		var newPosF = camera.add(forward.multiply(speed * (up - down)));
-	//console.log(newPosF);
-		if (newPosF.y > 0 && newPosF.x > -bound && newPosF.x < bound && newPosF.z > -bound && newPosF.z < bound)
-			camera = newPosF;
+		// restrain movement
+		newPosF.y = Math.min(Math.max(newPosF.y, bound/20.0), bound);
+		if (newPosF.x < 0) newPosF.x = Math.max(newPosF.x, -bound);
+		else newPosF.x = Math.min(newPosF.x, bound);
+		if (newPosF.z < 0) newPosF.z = Math.max(newPosF.z, -bound);
+		else newPosF.z = Math.min(newPosF.z, bound);
+		camera = newPosF;
 
 		// Sideways movement
 		var left = GL.keys.A | GL.keys.LEFT;
 		var right = GL.keys.D | GL.keys.RIGHT;
 		var sideways = GL.Vector.fromAngles(-angleY * Math.PI / 180, 0);
 		var newPosS = camera.add(sideways.multiply(speed * (right - left)));
-		if (newPosS.y > 0 && newPosS.x > -bound && newPosS.x < bound && newPosS.z > -bound && newPosS.z < bound)
-			camera = newPosS;
-		
+		// restrain movement
+		newPosS.y = Math.min(Math.max(newPosS.y, bound/20.0), bound);
+		if (newPosS.x < 0) newPosS.x = Math.max(newPosS.x, -bound);
+		else newPosS.x = Math.min(newPosS.x, bound);
+		if (newPosS.z < 0) newPosS.z = Math.max(newPosS.z, -bound);
+		else newPosS.z = Math.min(newPosS.z, bound);
+		camera = newPosS;
 	};
 
 	// called for each gl draw
