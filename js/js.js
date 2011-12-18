@@ -25,6 +25,7 @@ var AIR_RESISTANCE = 0.020;
 var INITIAL_SPEED = 600;
 var RECUR_DEPTH = 2;
 var PLANE_WORLD_SIZE = 4500;
+var TERRAIN_SIZE = 3000;
 
 // set up GL and meshes
 var gl = GL.create();
@@ -35,7 +36,7 @@ var planeShader = new GL.Shader('planeVert', 'planeFrag');
 var pointsMesh = new GL.Mesh();
 pointsMesh.addVertexBuffer('colors', 'gl_Color');
 var meshShader = new GL.Shader('pointVert', 'pointFrag');
-var terrain = new TerrainGrid(3000, 3000, 100);
+var terrain = new TerrainGrid(TERRAIN_SIZE, TERRAIN_SIZE, 100);
 var terrainShader = new GL.Shader('terrainVert', 'terrainFrag');
 
 // Water texture
@@ -242,16 +243,22 @@ function init() {
 		fireworks = newFireworks;
 		
 		// Forward movement
+		var bound = TERRAIN_SIZE/2 * .9
 		var up = GL.keys.W | GL.keys.UP;
 		var down = GL.keys.S | GL.keys.DOWN;
 		var forward = GL.Vector.fromAngles((90 - angleY) * Math.PI / 180, (180 - angleX) * Math.PI / 180);
-		camera = camera.add(forward.multiply(speed * (up - down)));
+		var newPosF = camera.add(forward.multiply(speed * (up - down)));
+	//console.log(newPosF);
+		if (newPosF.y > 0 && newPosF.x > -bound && newPosF.x < bound && newPosF.z > -bound && newPosF.z < bound)
+			camera = newPosF;
 
 		// Sideways movement
 		var left = GL.keys.A | GL.keys.LEFT;
 		var right = GL.keys.D | GL.keys.RIGHT;
 		var sideways = GL.Vector.fromAngles(-angleY * Math.PI / 180, 0);
-		camera = camera.add(sideways.multiply(speed * (right - left)));
+		var newPosS = camera.add(sideways.multiply(speed * (right - left)));
+		if (newPosS.y > 0 && newPosS.x > -bound && newPosS.x < bound && newPosS.z > -bound && newPosS.z < bound)
+			camera = newPosS;
 		
 	};
 

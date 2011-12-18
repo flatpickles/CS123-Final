@@ -1,11 +1,6 @@
 <html>
 <head>
 <title>WebGL Fireworks</title>
-<style>
-html, body {
-//	cursor: none;
-}
-</style>
 </head>
 
 <body>
@@ -167,11 +162,6 @@ vec4 sampleTextures()
 }
 
 void main() {
-	// vec3 n = normalize(normal);
-	// float diffuse = max(0.0, dot(light, n));
-	// float specular = 0.0; //pow(max(0.0, -reflect(light, n).z), 32.0) * sqrt(diffuse);
-	// gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), 1.0);
-	
 	// mountain texturing stuff
 	gl_FragColor = sampleTextures() * intensity;
 	gl_FragColor.a = 1.0;
@@ -195,20 +185,14 @@ void main() {
 		gl_FragColor = mix(gl_FragColor, vec4(darkColor, darkColor, darkColor, 0.0), overlay);
 	}
 	
-	
 	// Make mountain disappear if underwater or above water
 	if (y < 0.0)
 		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-		
-		
 }
 </script>
 
-
 <script type="text/javascript" src="js/terrain.js"></script>	
 <script type="text/javascript" src="js/js.js"></script>
-
-
 
 </body>
 

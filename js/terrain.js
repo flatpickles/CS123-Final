@@ -137,12 +137,8 @@ function TerrainGrid(sizeX, sizeZ, positionY) {
 				var indexbl = this.getIndex(new GridPoint(col, row + 1));
 				var indextr = this.getIndex(new GridPoint(col + 1, row));
 				var indexbr = this.getIndex(new GridPoint(col + 1, row + 1));
-				
-			//	if (this.allPoints[indextl].y > 0 || this.allPoints[indexbl].y > 0 || this.allPoints[indextr].y > 0 || this.allPoints[indexbr].y > 0) {
-					
-					this.triangles.push([indextr, indexbl, indextl]);
-					this.triangles.push([indextr, indexbr, indexbl]);
-			//	}
+				this.triangles.push([indextr, indexbl, indextl]);
+				this.triangles.push([indextr, indexbr, indexbl]);
 			}
 		}
 			

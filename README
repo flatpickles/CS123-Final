@@ -1,1 +1,18 @@
-Awesome.
+WebGL Fireworks
+Isaac Goldberg (igoldber) and Matt Nichols (man1)
+
+This project demos the capabilities of WebGL. Our finished product models a mountainous island over which fireworks explode continuously. We feature full reflections of the fireworks, mountain range, and skybox. The mountains are randomly generated, but always have a depression (a lake) in the middle. They are multi-textured with images of dirt, rock, grass, and snow. Additionally, our lighting models the directional lighting of the moon.
+
+Other technical challenges included:
+- properly layering many transparent surfaces with varying depths (mountains, lake, reflections)
+- overcoming the discrepancies in the GL implementations of OpenGL and WebGL
+- optimizing performance for a web browser
+- making the procedurally generated mountains realistic/visually appealing
+- modeling the physics of fireworks (we have air resistance, gravity, velocities, accelerations, etc.)
+- texturing the procedurally generated mesh
+- fading the horizon line of the water into the skybox texture
+
+To use the demo:
+- serve the files on a web server (this is online at http://www.mattnichols.net/fireworks if desired)
+- use a WebGL capable browser to view, newest versions of Chrome recommended
+- navigate the scene with WASD to move and dragging the mouse to pan.
