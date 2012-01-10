@@ -28,7 +28,9 @@ var PLANE_WORLD_SIZE = 4500;
 var TERRAIN_SIZE = 3000;
 
 // set up GL and meshes
-var gl = GL.create();
+var browserReady = true;
+try { var gl = GL.create(); }
+catch(err) { browserReady = false; }
 var trailsMesh = new GL.Mesh();
 var trailsShader = new GL.Shader('lineVert', 'lineFrag');
 var planeMesh = GL.Mesh.plane({ coords: true });
@@ -213,12 +215,8 @@ Firework.generate = function () {
 };
 
 // get everything started
-var browserReady = true;
 function init() {
 	var fireworks = [];
-	
-	if (!window.WebGLRenderingContext || navigator.userAgent.toLowerCase().indexOf('chrome') < 0)
-		browserReady = false;
 	
 	// generate and add a new firework at a regular interval
 	setInterval(function() {
