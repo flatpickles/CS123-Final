@@ -1,3 +1,5 @@
+// By Matt Nichols and Isaac Goldberg
+
 // vector class to model a three or four element data structure
 var Vector = function(x, y, z, a) {
 	this.x = x;
@@ -18,7 +20,7 @@ var Vector = function(x, y, z, a) {
 // some constants
 var GRAVITY = -25;
 var TESSELATION = 2;
-var NUM_SUB_FIREWORKS = 30;
+var NUM_SUB_FIREWORKS = 30;asdasdas
 var EXPLOSIVITY = 45.0;
 var MIN_AGE = -1; 
 var AIR_RESISTANCE = 0.020;
