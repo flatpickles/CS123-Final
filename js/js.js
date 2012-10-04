@@ -20,7 +20,7 @@ var Vector = function(x, y, z, a) {
 // some constants
 var GRAVITY = -25;
 var TESSELATION = 2;
-var NUM_SUB_FIREWORKS = 30;asdasdas
+var NUM_SUB_FIREWORKS = 30;
 var EXPLOSIVITY = 45.0;
 var MIN_AGE = -1; 
 var AIR_RESISTANCE = 0.020;
@@ -53,7 +53,7 @@ var urls = [];
 urls.push("textures/skybox/nx.jpg");
 urls.push("textures/skybox/px.jpg");
 urls.push("textures/skybox/py.jpg");
-urls.push("textures/skybox/ny.jpg")
+urls.push("textures/skybox/ny.jpg");
 urls.push("textures/skybox/nz.jpg");
 urls.push("textures/skybox/pz.jpg");
 
