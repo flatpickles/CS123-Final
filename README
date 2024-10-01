@@ -13,6 +13,6 @@ Other technical challenges included:
 - fading the horizon line of the water into the skybox texture
 
 To use the demo:
-- serve the files on a web server (this is online at http://www.mattnichols.net/fireworks if desired)
+- serve the files on a web server (this is online at https://cs123-fireworks.vercel.app/ if desired)
 - use a WebGL capable browser to view, newest versions of Chrome recommended
 - navigate the scene with WASD to move and dragging the mouse to pan.
